@@ -178,7 +178,7 @@ class AdminTransparencyTests(TestCase):
         response = self.client.get(
             reverse("admin:catalog_book_changelist"), {"owner": self.owner.pk}
         )
-        self.assertContains(response, "First owner book", count=1)
+        self.assertContains(response, ">First owner book</a>", count=1)
         self.assertNotContains(response, "Second owner book")
 
     def test_category_admin_shows_and_filters_by_library_owner(self):
@@ -188,7 +188,7 @@ class AdminTransparencyTests(TestCase):
 
         self.assertContains(response, "User")
         self.assertContains(response, "first-owner")
-        self.assertContains(response, "History", count=1)
+        self.assertContains(response, ">History</a>", count=1)
 
 
 class LibraryViewTests(TestCase):
