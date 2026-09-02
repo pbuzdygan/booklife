@@ -334,8 +334,8 @@ GitHub Actions runs the Django checks, migrations check, test suite, and
 static-file build for pushes and pull requests targeting either branch. It does
 not build a Docker image at that stage. Publishing a GitHub Release targeted at
 `main` or `dev` runs the separate Docker release build for that exact release
-tag. It validates the image but does not publish it to a registry or deploy it
-anywhere.
+tag and publishes it to GitHub Container Registry (GHCR). It never deploys the
+image automatically.
 
 For a release build, create the tag and GitHub Release from the intended branch,
 then select that same branch as the release target. The workflow rejects any
