@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if mode == 'edit' %}Edit {{ book.title }}{% else %}Add book{% endif %} · Booklife{% endblock %}
+
+{% block page_scripts %}
+  <script src="{% static 'catalog/vendor/zxing-browser-0.2.1.min.js' %}" integrity="sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf" crossorigin="anonymous" defer></script>
+{% endblock %}
+
+{% block content %}
+  <header class="form-page-header">
+    <a class="back-link" href="{% if book %}{{ book.get_absolute_url }}{% else %}{% url 'library' %}{% endif %}">{% include "icons/icon.html" with name="arrow-left" %} Cancel and go back</a>
+    <p class="kicker">{% if mode == 'edit' %}Keep the record current{% else %}A new story starts here{% endif %}</p>
+    <h1>{% if mode == 'edit' %}Edit book{% else %}Add a book{% endif %}</h1>
+    <p>{% if mode == 'edit' %}Update only what changed.{% else %}A title is enough to begin. Everything else can wait.{% endif %}</p>
+  </header>
+
+  <form method="post" enctype="multipart/form-data" class="book-form" novalidate>
+    {% csrf_token %}
+    {{ form.version }}
+    {{ form.isbn_cover_data }}
+    {% if form.non_field_errors %}<div class="form-errors form-errors-wide">{{ form.non_field_errors }}</div>{% endif %}
+
+    <section class="form-section isbn-fetch quick-capture" aria-labelledby="isbn-heading" data-isbn-fetch data-lookup-url="{% url 'isbn-lookup' %}">
+      <div class="form-section-copy">
+        <div class="quick-heading"><p class="section-number">01</p><h2 id="isbn-heading">Quick capture</h2><p>ISBN is optional. A title is enough to begin.</p></div>
+        <div class="quick-cover">
+          {% if book %}{% include "catalog/partials/cover.html" with cover_class="form-cover" %}{% else %}<span class="form-cover cover-frame" aria-hidden="true"><span class="cover-fallback">BL</span></span>{% endif %}
+          <div class="quick-cover-actions">
+            <label class="quick-cover-action" title="Add or replace cover" aria-label="Add or replace cover">{% include "icons/icon.html" with name="photo-plus" %}{{ form.cover }}</label>
+            {% if book.cover_filename %}<label class="quick-cover-action quick-cover-remove" title="Remove current cover" aria-label="Remove current cover">{% include "icons/icon.html" with name="trash" %}{{ form.clear_cover }}</label>{% endif %}
+          </div>
+          {% if form.cover.errors %}<div class="field-errors">{{ form.cover.errors }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="isbn-fetch-workspace">
+        <div class="field">
+          <label for="isbn-lookup-input">ISBN-10 or ISBN-13</label>
+          <div class="isbn-actions">
+            <input class="form-control" id="isbn-lookup-input" type="text" inputmode="numeric" autocomplete="off" placeholder="978…" aria-describedby="isbn-lookup-help isbn-lookup-status" data-isbn-input>
+            <button class="primary-button isbn-scan-button" type="button" data-isbn-scan>{% include "icons/icon.html" with name="camera" %}<span>Scan barcode</span></button>
+            <button class="secondary-button" type="button" data-isbn-lookup>{% include "icons/icon.html" with name="barcode" %}<span>Fetch details</span></button>
+          </div>
+          <small id="isbn-lookup-help">Book barcodes normally contain an ISBN-13 beginning with 978 or 979. Other product codes are ignored.</small>
+          <p class="isbn-status" id="isbn-lookup-status" role="status" aria-live="polite" data-isbn-status></p>
+          {% if form.isbn_cover_data.errors %}<div class="field-errors">{{ form.isbn_cover_data.errors }}</div>{% endif %}
+        </div>
+        <div class="quick-fields">
+          <div class="field field-wide"><label for="{{ form.title.id_for_label }}">Title <span aria-hidden="true">*</span></label>{{ form.title }}{% if form.title.errors %}<div class="field-errors">{{ form.title.errors }}</div>{% endif %}</div>
+          <div class="field field-wide"><label for="{{ form.author.id_for_label }}">Author</label>{{ form.author }}{% if form.author.errors %}<div class="field-errors">{{ form.author.errors }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.reading_status.id_for_label }}">Reading status</label>{{ form.reading_status }}{% if form.reading_status.errors %}<div class="field-errors">{{ form.reading_status.errors }}</div>{% endif %}</div>
+          <div class="field"><label for="{{ form.ownership_status.id_for_label }}">Location</label>{{ form.ownership_status }}{% if form.ownership_status.errors %}<div class="field-errors">{{ form.ownership_status.errors }}</div>{% endif %}</div>
+        </div>
+        <div class="isbn-result" data-isbn-result hidden>
+          <span class="isbn-result-cover cover-frame" aria-hidden="true"><span class="cover-fallback">BL</span><img alt="" data-isbn-result-cover hidden></span>
+          <span><strong data-isbn-result-title></strong><small data-isbn-result-author></small><small>Metadata from <span data-isbn-result-source>the book catalogue</span> · review before saving</small></span>
+        </div>
+      </div>
+      <dialog class="isbn-scanner" data-isbn-scanner aria-labelledby="isbn-scanner-title">
+        <div class="isbn-scanner-heading"><div><p class="kicker">Camera scanner</p><h2 id="isbn-scanner-title">Point at the book barcode</h2></div><button class="quiet-icon" type="button" data-isbn-scan-close aria-label="Close scanner">{% include "icons/icon.html" with name="x" %}</button></div>
+        <div class="isbn-video-frame"><video muted playsinline data-isbn-video></video><span aria-hidden="true"></span></div>
+        <p>Keep the 978 or 979 barcode inside the frame. Booklife ignores unrelated product codes.</p>
+        <button class="secondary-button" type="button" data-isbn-scan-close>Cancel</button>
+      </dialog>
+    </section>
+
+    <details class="form-details" {% if book or form.cover.errors or form.shelf_location.errors or form.rating.errors or form.page_count.errors or form.finished_on.errors or form.notes.errors or form.categories.errors or form.new_categories.errors or form.attachments.errors %}open{% endif %}>
+      <summary><span>More details</span><small>Shelf detail, reading details, categories and attachments</small></summary>
+      <div class="form-details-content">
+        <section class="form-section" aria-labelledby="state-heading">
+          <div class="form-section-copy"><p class="section-number">02</p><h2 id="state-heading">Shelf detail</h2><p>Optional location in your home.</p></div>
+          <div class="form-fields"><div class="field field-wide"><label for="{{ form.shelf_location.id_for_label }}">Shelf detail</label>{{ form.shelf_location }}<small>{{ form.shelf_location.help_text }}</small>{% if form.shelf_location.errors %}<div class="field-errors">{{ form.shelf_location.errors }}</div>{% endif %}</div></div>
+        </section>
+
+        <section class="form-section" aria-labelledby="reading-heading">
+      <div class="form-section-copy"><p class="section-number">03</p><h2 id="reading-heading">Reading details</h2><p>Useful after the final page.</p></div>
+      <div class="form-fields form-fields-two">
+        <div class="field"><label for="{{ form.rating.id_for_label }}">Rating out of 10</label>{{ form.rating }}<small>{{ form.rating.help_text }}</small>{% if form.rating.errors %}<div class="field-errors">{{ form.rating.errors }}</div>{% endif %}</div>
+        <div class="field"><label for="{{ form.page_count.id_for_label }}">Page count</label>{{ form.page_count }}{% if form.page_count.errors %}<div class="field-errors">{{ form.page_count.errors }}</div>{% endif %}</div>
+        <div class="field"><label for="{{ form.finished_on.id_for_label }}">Finish date</label>{{ form.finished_on }}{% if form.finished_on.errors %}<div class="field-errors">{{ form.finished_on.errors }}</div>{% endif %}</div>
+        <div class="field field-wide"><label for="{{ form.notes.id_for_label }}">My note</label>{{ form.notes }}{% if form.notes.errors %}<div class="field-errors">{{ form.notes.errors }}</div>{% endif %}</div>
+      </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="category-heading">
+      <div class="form-section-copy"><p class="section-number">04</p><h2 id="category-heading">Categories</h2><p>Select several or create a new one.</p></div>
+      <div class="form-fields">
+        <fieldset class="category-options field-wide"><legend class="visually-hidden">Existing categories</legend>{{ form.categories }}{% if form.categories.errors %}<div class="field-errors">{{ form.categories.errors }}</div>{% endif %}</fieldset>
+        <div class="field field-wide"><label for="{{ form.new_categories.id_for_label }}">New categories</label>{{ form.new_categories }}<small>{{ form.new_categories.help_text }} You can also maintain the complete list in <a href="{% url 'settings' %}">Settings</a>.</small>{% if form.new_categories.errors %}<div class="field-errors">{{ form.new_categories.errors }}</div>{% endif %}</div>
+      </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="attachments-heading">
+      <div class="form-section-copy"><p class="section-number">05</p><h2 id="attachments-heading">Attachments</h2><p>Keep a small supporting file with this book.</p></div>
+      <div class="form-fields">
+        {% if available_attachments %}
+          <div class="attachment-list field-wide">
+            {% for attachment in available_attachments %}
+              <div class="attachment-row">
+                <span class="attachment-icon">{% include "icons/icon.html" with name="paperclip" %}</span>
+                <span><strong>{{ attachment.original_name }}</strong><small>{{ attachment.size|filesizeformat }}</small></span>
+                <a class="text-button" href="{% url 'attachment-download' attachment.id %}">Download</a>
+                <button class="quiet-icon danger-icon" type="submit" formaction="{% url 'attachment-delete' attachment.id %}" formmethod="post" formnovalidate data-confirm="Remove this attachment?" aria-label="Remove {{ attachment.original_name }}" title="Remove attachment">{% include "icons/icon.html" with name="trash" %}</button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="field field-wide"><label for="{{ form.attachments.id_for_label }}">Add files</label>{{ form.attachments }}<small>{{ form.attachments.help_text }}</small>{% if form.attachments.errors %}<div class="field-errors">{{ form.attachments.errors }}</div>{% endif %}</div>
+      </div>
+        </section>
+      </div>
+    </details>
+
+    <footer class="form-actions"><a class="secondary-button" href="{% if book %}{{ book.get_absolute_url }}{% else %}{% url 'library' %}{% endif %}">Cancel</a><button class="primary-button" type="submit">{% if mode == 'edit' %}Save changes{% else %}Add book{% endif %}</button></footer>
+  </form>
+{% endblock %}

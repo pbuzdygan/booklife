@@ -1,0 +1,20 @@
+.git
+.gitignore
+.DS_Store
+.env
+.venv
+backups
+staticfiles
+project input
+data
+docs
+README.md
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+*.log

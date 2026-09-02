@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Booklife">
+  <rect width="512" height="512" rx="82" fill="#172330"/>
+  <path d="M150 125h49v262h-49zM232 83h49v346h-49zM314 125h49v262h-49z" fill="#fff"/>
+  <path d="M232 83h49v346h-49z" fill="#f18a64"/>
+</svg>

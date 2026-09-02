@@ -1,0 +1,6 @@
+<div class="empty-state">
+  <span class="empty-mark">{% include "icons/icon.html" with name="book-off" %}</span>
+  <h2>{{ empty_title }}</h2>
+  <p>{{ empty_text }}</p>
+  <a class="secondary-button" href="{% url 'book-create' %}">Add a book</a>
+</div>

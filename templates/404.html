@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Not found · Booklife{% endblock %}
+{% block content %}<div class="standalone-state"><p class="kicker">404</p><h1>That page is not in this library.</h1><p>It may have moved, been deleted, or belong to another private library.</p><a class="primary-button" href="{% url 'library' %}">Return to Booklife</a></div>{% endblock %}

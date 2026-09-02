@@ -1,0 +1,1 @@
+{% if sort_key == column %}{% if sort_direction == "asc" %}{% include "icons/icon.html" with name="sort-ascending" icon_class="sort-icon" %}{% else %}{% include "icons/icon.html" with name="sort-descending" icon_class="sort-icon" %}{% endif %}{% else %}{% include "icons/icon.html" with name="arrows-sort" icon_class="sort-icon" %}{% endif %}

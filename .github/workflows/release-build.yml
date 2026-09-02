@@ -1,0 +1,53 @@
+name: Release build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Branch channel to build
+        required: true
+        type: choice
+        options: [main, dev]
+      ref:
+        description: Git ref to build (branch, tag, or commit SHA)
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-build-${{ github.event.release.tag_name || inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ inputs.channel || github.event.release.target_commitish }} release image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHANNEL: ${{ inputs.channel || github.event.release.target_commitish }}
+      REF: ${{ inputs.ref || github.event.release.tag_name }}
+      VERSION: ${{ github.event.release.tag_name || inputs.ref }}
+    steps:
+      - name: Validate release channel
+        shell: bash
+        run: |
+          case "$CHANNEL" in
+            main|dev) ;;
+            *)
+              echo "A release must target main or dev; received: $CHANNEL"
+              exit 1
+              ;;
+          esac
+
+      - name: Check out release source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ env.REF }}
+
+      - name: Build Docker image
+        run: docker build --tag "booklife:${CHANNEL}-${VERSION}" .

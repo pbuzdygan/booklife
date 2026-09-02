@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ view_title }} · Booklife{% endblock %}
+
+{% block content %}
+  <header class="page-heading">
+    <div>
+      <p class="kicker">{{ view_kicker }}</p>
+      <h1>{{ view_title }}</h1>
+      <p class="view-description">{{ view_description }}</p>
+    </div>
+    {% if current_view != 'trash' %}
+      <a class="primary-button desktop-add" href="{% url 'book-create' %}">{% include "icons/icon.html" with name="plus" %} Add book</a>
+    {% endif %}
+  </header>
+
+  {% if current_view == 'journal' %}
+    <section class="journal-summary" aria-label="Reading summary">
+      <div class="journal-intro"><strong>{{ journal_summary.count }}</strong><p>finished books, each leaving a small trace in your library.</p></div>
+      <div class="stat-block"><strong>{{ journal_summary.average|default:'—' }}</strong><span>Average rating</span></div>
+      <div class="stat-block"><strong>{{ journal_summary.pages }}</strong><span>Pages recorded</span></div>
+      <div class="stat-block"><strong>{{ journal_summary.years }}</strong><span>Reading years</span></div>
+    </section>
+
+    <div class="journal-years">
+      {% for year, year_books in journal_groups %}
+        <section class="year-section" aria-labelledby="year-{{ year }}">
+          <div class="year-heading"><h2 id="year-{{ year }}">{{ year }}</h2><p>{{ year_books|length }} book{{ year_books|length|pluralize }}</p></div>
+          <div class="year-books">
+            {% for book in year_books %}
+              <a class="journal-book" href="{{ book.get_absolute_url }}">
+                {% include "catalog/partials/cover.html" with cover_class="mini-cover" %}
+                <strong>{{ book.title }}</strong>
+                <span>{{ book.author|default:'Unknown author' }}</span>
+                <span class="rating">{{ book.rating|default:'—' }}{% if book.rating %}<small>/10</small>{% endif %}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% empty %}
+        {% include "catalog/partials/empty_state.html" with empty_title="Your journal is waiting" empty_text="Mark a book as read and it will appear here." %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <section class="library-section" aria-label="Book list">
+      <form class="filter-form" method="get">
+        <input type="hidden" name="view" value="{{ current_view }}">
+        <div class="toolbar">
+          <label class="search-field">
+            <span class="visually-hidden">Search your library</span>
+            {% include "icons/icon.html" with name="search" icon_class="search-icon" %}
+            <input id="library-search" name="q" type="search" value="{{ query }}" placeholder="Search by title, author, or note…" maxlength="200" autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+          <div class="toolbar-actions">
+            <details class="filter-panel" data-filter-panel>
+              <summary class="secondary-button">{% include "icons/icon.html" with name="filter" %} Filters{% if active_filter_count %}<span class="filter-count">{{ active_filter_count }}</span>{% endif %}</summary>
+              <div class="filter-popover">
+                <header><div><p class="kicker">Narrow the view</p><h2>Filters</h2></div></header>
+                <div class="filter-grid">
+                  <label>Reading status
+                    <select name="status">
+                      <option value="">Any status</option>
+                      {% for value, label in reading_choices %}<option value="{{ value }}" {% if filter_values.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
+                  </label>
+                  <label>Location
+                    <select name="location">
+                      <option value="">Any location</option>
+                      {% for value, label in ownership_choices %}<option value="{{ value }}" {% if filter_values.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
+                  </label>
+                  <label>Category
+                    <select name="category">
+                      <option value="">Any category</option>
+                      {% for category in categories %}<option value="{{ category.id }}" {% if filter_values.category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>{% endfor %}
+                    </select>
+                  </label>
+                  <label>Minimum rating
+                    <select name="rating">
+                      <option value="">Any rating</option>
+                      {% for value in '789' %}<option value="{{ value }}" {% if filter_values.rating == value %}selected{% endif %}>{{ value }} / 10</option>{% endfor %}
+                    </select>
+                  </label>
+                  <label>Reading year
+                    <select name="year">
+                      <option value="">Any year</option>
+                      {% for year in years %}<option value="{{ year }}" {% if filter_values.year == year|stringformat:'s' %}selected{% endif %}>{{ year }}</option>{% endfor %}
+                    </select>
+                  </label>
+                </div>
+                <footer><a class="text-button" href="{% url 'library' %}?view={{ current_view }}">Clear all</a><button class="primary-button" type="submit">Apply filters</button></footer>
+              </div>
+            </details>
+            <div class="segmented" role="group" aria-label="Presentation style">
+              <button class="segment is-active" type="button" data-layout="table" aria-pressed="true" aria-label="Table view">{% include "icons/icon.html" with name="layout-list" %}</button>
+              <button class="segment" type="button" data-layout="covers" aria-pressed="false" aria-label="Cover view">{% include "icons/icon.html" with name="layout-grid" %}</button>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      {% if books %}
+        <div class="table-region" data-table-region>
+          <table>
+            <thead>
+              <tr>
+                <th class="cover-cell"><span class="visually-hidden">Cover</span></th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=title&amp;direction={% if sort_key == 'title' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Title {% include "icons/sort.html" with column="title" %}</a></th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=author&amp;direction={% if sort_key == 'author' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Author {% include "icons/sort.html" with column="author" %}</a></th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=status&amp;direction={% if sort_key == 'status' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Status {% include "icons/sort.html" with column="status" %}</a></th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=rating&amp;direction={% if sort_key == 'rating' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Rating {% include "icons/sort.html" with column="rating" %}</a></th>
+                <th>Category</th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=location&amp;direction={% if sort_key == 'location' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Location {% include "icons/sort.html" with column="location" %}</a></th>
+                <th class="number-column"><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=pages&amp;direction={% if sort_key == 'pages' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Pages {% include "icons/sort.html" with column="pages" %}</a></th>
+                <th><a href="?{% if query_without_sort %}{{ query_without_sort }}&amp;{% endif %}sort=finished&amp;direction={% if sort_key == 'finished' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}">Finished {% include "icons/sort.html" with column="finished" %}</a></th>
+                {% if current_view == 'trash' %}<th>Actions</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for book in books %}
+                <tr>
+                  <td class="cover-cell">{% include "catalog/partials/cover.html" with cover_class="mini-cover" %}</td>
+                  <td><a class="book-title-link" href="{{ book.get_absolute_url }}">{{ book.title }}</a></td>
+                  <td><span class="truncate">{{ book.author|default:'Unknown author' }}</span></td>
+                  <td><span class="status status-{{ book.reading_status }}">{{ book.get_reading_status_display }}</span></td>
+                  <td>{% if book.rating %}<span class="rating">{{ book.rating }}<small>/10</small></span>{% else %}<span class="empty-value">—</span>{% endif %}</td>
+                  <td><span class="categories">{% for category in book.categories.all|slice:':2' %}<span class="category-tag">{{ category.name }}</span>{% empty %}<span class="empty-value">—</span>{% endfor %}</span></td>
+                  <td><span class="location location-{{ book.ownership_status }}">{{ book.get_ownership_status_display }}</span></td>
+                  <td class="number-cell">{{ book.page_count|default:'—' }}</td>
+                  <td>{{ book.finished_on|date:'Y'|default:'—' }}</td>
+                  {% if current_view == 'trash' %}
+                    <td class="row-actions">
+                      <form method="post" action="{% url 'book-restore' book.id %}">{% csrf_token %}<button class="text-button" type="submit">Restore</button></form>
+                      <form method="post" action="{% url 'book-delete' book.id %}" data-confirm="Permanently delete this book? This cannot be undone.">{% csrf_token %}<button class="danger-button" type="submit">Delete</button></form>
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="cover-region" data-cover-region hidden>
+          {% for book in books %}
+            <a class="book-card" href="{{ book.get_absolute_url }}">
+              {% include "catalog/partials/cover.html" with cover_class="grid-cover" %}
+              <h2>{{ book.title }}</h2><p>{{ book.author|default:'Unknown author' }}</p>
+              <span class="card-meta"><span class="status status-{{ book.reading_status }}">{{ book.get_reading_status_display }}</span>{% if book.rating %}<span class="rating">{{ book.rating }}<small>/10</small></span>{% endif %}</span>
+            </a>
+          {% endfor %}
+        </div>
+        <footer class="list-footer"><p>{{ books|length }} book{{ books|length|pluralize }}</p><p>Stored privately in your Booklife database</p></footer>
+      {% else %}
+        {% include "catalog/partials/empty_state.html" with empty_title="Nothing here yet" empty_text="Change the filters or add the first book to this view." %}
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

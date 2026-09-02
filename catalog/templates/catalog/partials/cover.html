@@ -1,0 +1,4 @@
+<span class="{{ cover_class }} cover-frame" aria-hidden="true">
+  <span class="cover-fallback">{{ book.title|slice:':2'|upper }}</span>
+  {% if book.cover_filename %}<img src="{% url 'book-cover' book.id %}" alt="" loading="lazy">{% endif %}
+</span>
