@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Settings · Booklife{% endblock %}
+
+{% block content %}
+  <header class="page-heading settings-heading">
+    <div>
+      <p class="kicker">Your library, your rules</p>
+      <h1>Settings</h1>
+      <p class="view-description">Manage reusable categories and library tools in one place.</p>
+    </div>
+  </header>
+
+  <div class="settings-sections">
+    <section class="settings-section" aria-labelledby="categories-heading">
+      <div class="settings-section-heading">
+        <span class="settings-section-icon">{% include "icons/icon.html" with name="tags" %}</span>
+        <div><h2 id="categories-heading">Categories</h2><p>Add labels once, then reuse them on any book.</p></div>
+      </div>
+
+      <form method="post" class="category-create-form" novalidate>
+        {% csrf_token %}
+        <div class="field">
+          <label for="{{ form.name.id_for_label }}">New category</label>
+          <div class="inline-field">{{ form.name }}<button class="primary-button" type="submit">Add category</button></div>
+          {% if form.name.errors %}<div class="field-errors">{{ form.name.errors }}</div>{% endif %}
+        </div>
+      </form>
+
+      <div class="category-manager">
+        {% for category in categories %}
+          <div class="category-manager-row">
+            <div><strong>{{ category.name }}</strong><span>{{ category.book_count }} book{{ category.book_count|pluralize }}</span></div>
+            <form method="post" action="{% url 'category-delete' category.id %}" data-confirm="Remove this category? Books using it will be kept.">
+              {% csrf_token %}<button class="quiet-icon danger-icon" type="submit" aria-label="Remove {{ category.name }}" title="Remove category">{% include "icons/icon.html" with name="trash" %}</button>
+            </form>
+          </div>
+        {% empty %}
+          <p class="settings-empty">No categories yet. Add the first one above.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="settings-section" aria-labelledby="library-tools-heading">
+      <div class="settings-section-heading">
+        <span class="settings-section-icon">{% include "icons/icon.html" with name="settings" %}</span>
+        <div><h2 id="library-tools-heading">Library tools</h2><p>Recovery and a portable copy of your records.</p></div>
+      </div>
+      <div class="settings-links">
+        <a href="{% url 'library' %}?view=trash"><span>{% include "icons/icon.html" with name="trash" %}</span><span><strong>Trash</strong><small>{{ navigation_counts.trash }} book{{ navigation_counts.trash|pluralize }} waiting</small></span>{% include "icons/icon.html" with name="chevron-right" %}</a>
+        <a href="{% url 'export-json' %}"><span>{% include "icons/icon.html" with name="download" %}</span><span><strong>Export JSON</strong><small>Download a portable copy of your library records</small></span>{% include "icons/icon.html" with name="chevron-right" %}</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}

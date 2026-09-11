@@ -1,0 +1,114 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#172330">
+    <meta name="description" content="Booklife — your private digital library.">
+    <title>{% block title %}Booklife{% endblock %}</title>
+    <link rel="manifest" href="{% static 'catalog/manifest.webmanifest' %}">
+    <link rel="icon" href="{% static 'catalog/icons/booklife-favicon.ico' %}" sizes="any">
+    <link rel="icon" href="{% static 'catalog/icons/booklife-icon-32.png' %}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{% static 'catalog/icons/booklife-icon.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'catalog/icons/booklife-icon-180.png' %}" sizes="180x180">
+    <link rel="stylesheet" href="{% static 'catalog/app.css' %}">
+    {% block page_scripts %}{% endblock %}
+    <script src="{% static 'catalog/app.js' %}" defer></script>
+  </head>
+  <body class="{% if user.is_authenticated %}app-body{% else %}auth-body{% endif %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    {% if user.is_authenticated %}
+      <div class="app-shell">
+        <aside class="sidebar" aria-label="Main navigation">
+          <a class="brand" href="{% url 'library' %}" aria-label="Booklife home">
+            <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="brand-copy"><strong>Booklife</strong><small>Your library</small></span>
+          </a>
+
+          <nav class="view-nav" aria-label="Library views">
+            <p class="nav-label">Library</p>
+            <a class="nav-item {% if current_view == 'all' %}is-active{% endif %}" href="{% url 'library' %}?view=all">
+              <span class="nav-icon">{% include "icons/icon.html" with name="books" %}</span><span>All books</span><span class="nav-count">{{ navigation_counts.all }}</span>
+            </a>
+            <a class="nav-item {% if current_view == 'queue' %}is-active{% endif %}" href="{% url 'library' %}?view=queue">
+              <span class="nav-icon">{% include "icons/icon.html" with name="clock-hour-4" %}</span><span>Reading queue</span><span class="nav-count">{{ navigation_counts.queue }}</span>
+            </a>
+            <a class="nav-item {% if current_view == 'wishlist' %}is-active{% endif %}" href="{% url 'library' %}?view=wishlist">
+              <span class="nav-icon">{% include "icons/icon.html" with name="heart" %}</span><span>Wishlist</span><span class="nav-count">{{ navigation_counts.wishlist }}</span>
+            </a>
+            <a class="nav-item {% if current_view == 'read' %}is-active{% endif %}" href="{% url 'library' %}?view=read">
+              <span class="nav-icon">{% include "icons/icon.html" with name="circle-check" %}</span><span>Read</span><span class="nav-count">{{ navigation_counts.read }}</span>
+            </a>
+            <a class="nav-item {% if current_view == 'loaned' %}is-active{% endif %}" href="{% url 'library' %}?view=loaned">
+              <span class="nav-icon">{% include "icons/icon.html" with name="user-share" %}</span><span>Loaned</span><span class="nav-count">{{ navigation_counts.loaned }}</span>
+            </a>
+            <p class="nav-label nav-label-spaced">Story</p>
+            <a class="nav-item {% if current_view == 'journal' %}is-active{% endif %}" href="{% url 'library' %}?view=journal">
+              <span class="nav-icon">{% include "icons/icon.html" with name="notebook" %}</span><span>Reading journal</span><span></span>
+            </a>
+          </nav>
+
+          <div class="sidebar-tools">
+            <a class="nav-item {% if current_view == 'settings' %}is-active{% endif %}" href="{% url 'settings' %}">
+              <span class="nav-icon">{% include "icons/icon.html" with name="settings" %}</span><span>Settings</span><span></span>
+            </a>
+          </div>
+
+          <div class="profile">
+            <span class="avatar" aria-hidden="true">{{ user.username|slice:':1'|upper }}</span>
+            <span class="profile-copy"><strong>{{ user.username }}</strong><small>Private library</small></span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="quiet-icon" type="submit" aria-label="Sign out" title="Sign out">{% include "icons/icon.html" with name="logout" %}</button>
+            </form>
+          </div>
+        </aside>
+
+        <header class="mobile-header">
+          <a class="mobile-brand" href="{% url 'library' %}">
+            <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+            <strong>Booklife</strong>
+          </a>
+          <div class="mobile-header-actions">
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="icon-button" type="submit" aria-label="Sign out" title="Sign out">{% include "icons/icon.html" with name="logout" %}</button>
+            </form>
+            <a class="icon-button" href="{% url 'settings' %}" aria-label="Open settings">{% include "icons/icon.html" with name="settings" %}</a>
+            <a class="icon-button" href="{% url 'book-create' %}" aria-label="Add book">{% include "icons/icon.html" with name="plus" %}</a>
+          </div>
+        </header>
+
+        <main id="main-content" class="main-content" tabindex="-1">
+          {% if messages %}
+            <div class="messages" aria-live="polite">
+              {% for message in messages %}
+                <div class="message message-{{ message.tags|default:'info' }}">
+                  <span>{{ message }}</span>
+                  <button type="button" data-dismiss-message aria-label="Dismiss message">{% include "icons/icon.html" with name="x" %}</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+
+      <nav class="mobile-nav" aria-label="Mobile navigation">
+        <a class="{% if current_view == 'all' %}is-active{% endif %}" href="{% url 'library' %}?view=all"><span>{% include "icons/icon.html" with name="books" %}</span><small>All</small></a>
+        <a class="{% if current_view == 'queue' %}is-active{% endif %}" href="{% url 'library' %}?view=queue"><span>{% include "icons/icon.html" with name="clock-hour-4" %}</span><small>Queue</small></a>
+        <a class="{% if current_view == 'wishlist' %}is-active{% endif %}" href="{% url 'library' %}?view=wishlist"><span>{% include "icons/icon.html" with name="heart" %}</span><small>Wishlist</small></a>
+        <a class="{% if current_view == 'read' %}is-active{% endif %}" href="{% url 'library' %}?view=read"><span>{% include "icons/icon.html" with name="circle-check" %}</span><small>Read</small></a>
+        <a class="{% if current_view == 'loaned' %}is-active{% endif %}" href="{% url 'library' %}?view=loaned"><span>{% include "icons/icon.html" with name="user-share" %}</span><small>Loaned</small></a>
+        <a class="{% if current_view == 'journal' %}is-active{% endif %}" href="{% url 'library' %}?view=journal"><span>{% include "icons/icon.html" with name="notebook" %}</span><small>Journal</small></a>
+      </nav>
+    {% else %}
+      <main id="main-content" class="auth-main" tabindex="-1">
+        {% block auth_content %}{% endblock %}
+      </main>
+    {% endif %}
+  </body>
+</html>

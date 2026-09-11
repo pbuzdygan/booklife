@@ -1,0 +1,33 @@
+name: booklife
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        BOOKLIFE_UID: "${BOOKLIFE_UID:-1000}"
+        BOOKLIFE_GID: "${BOOKLIFE_GID:-1000}"
+    environment:
+      BOOKLIFE_DEBUG: "false"
+      BOOKLIFE_SECRET_KEY: "${BOOKLIFE_SECRET_KEY:?Set BOOKLIFE_SECRET_KEY in .env}"
+      BOOKLIFE_ALLOWED_HOSTS: "${BOOKLIFE_ALLOWED_HOSTS:-localhost,127.0.0.1}"
+      BOOKLIFE_CSRF_TRUSTED_ORIGINS: "${BOOKLIFE_CSRF_TRUSTED_ORIGINS:-}"
+      BOOKLIFE_TIME_ZONE: "${BOOKLIFE_TIME_ZONE:-Europe/Warsaw}"
+      BOOKLIFE_TRUST_PROXY_HEADERS: "${BOOKLIFE_TRUST_PROXY_HEADERS:-false}"
+      BOOKLIFE_SECURE_COOKIES: "${BOOKLIFE_SECURE_COOKIES:-false}"
+      BOOKLIFE_SECURE_SSL_REDIRECT: "${BOOKLIFE_SECURE_SSL_REDIRECT:-false}"
+      BOOKLIFE_HSTS_SECONDS: "${BOOKLIFE_HSTS_SECONDS:-0}"
+    ports:
+      - "${BOOKLIFE_BIND_ADDRESS:-127.0.0.1}:${BOOKLIFE_PORT:-8019}:8000"
+    volumes:
+      - ./data:/app/data
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 5s

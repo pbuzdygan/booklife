@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} · Booklife{% endblock %}
+
+{% block content %}
+  <header class="detail-page-header">
+    <a class="back-link" href="{% url 'library' %}?view={% if book.deleted_at %}trash{% else %}all{% endif %}">{% include "icons/icon.html" with name="arrow-left" %} Back to {% if book.deleted_at %}trash{% else %}library{% endif %}</a>
+    <div class="detail-actions">
+      {% if book.deleted_at %}
+        <form method="post" action="{% url 'book-restore' book.id %}">{% csrf_token %}<button class="secondary-button" type="submit">Restore</button></form>
+        <form method="post" action="{% url 'book-delete' book.id %}" data-confirm="Permanently delete this book? This cannot be undone.">{% csrf_token %}<button class="danger-button" type="submit">Delete permanently</button></form>
+      {% else %}
+        {% if book.ownership_status == 'wanted' %}<form method="post" action="{% url 'book-mark-owned' book.id %}">{% csrf_token %}<button class="secondary-button" type="submit">I own it</button></form>{% endif %}
+        <a class="primary-button" href="{% url 'book-update' book.id %}">Edit book</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <article class="detail-sheet">
+    <section class="detail-lead">
+      {% include "catalog/partials/cover.html" with cover_class="detail-cover" %}
+      <div class="detail-title">
+        {% if book.deleted_at %}<span class="status status-deleted">In trash</span>{% else %}<span class="status status-{{ book.reading_status }}">{{ book.get_reading_status_display }}</span>{% endif %}
+        <h1>{{ book.title }}</h1>
+        <p>{{ book.author|default:'Unknown author' }}</p>
+        <div class="detail-badges">
+          <span class="location location-{{ book.ownership_status }}">{{ book.get_ownership_status_display }}</span>
+          {% if book.shelf_location %}<span class="category-tag">{{ book.shelf_location }}</span>{% endif %}
+          {% for category in book.categories.all %}<span class="category-tag">{{ category.name }}</span>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <dl class="detail-facts">
+      <div><dt>Rating</dt><dd>{% if book.rating %}{{ book.rating }}/10{% else %}—{% endif %}</dd></div>
+      <div><dt>Pages</dt><dd>{{ book.page_count|default:'—' }}</dd></div>
+      <div><dt>Finished</dt><dd>{{ book.finished_on|date:'j M Y'|default:'—' }}</dd></div>
+      <div><dt>Updated</dt><dd>{{ book.updated_at|date:'j M Y' }}</dd></div>
+    </dl>
+
+    <div class="detail-columns">
+      <section class="detail-section">
+        <h2>My note</h2>
+        {% if book.notes %}<p class="detail-note">{{ book.notes|linebreaksbr }}</p>{% else %}<p class="detail-note is-empty">No note yet. Add the thought you want to remember.</p>{% endif %}
+      </section>
+      <section class="detail-section">
+        <h2>Book lifecycle</h2>
+        <ol class="timeline">
+          {% for event in book.events.all %}
+            <li><strong>{{ event.get_event_type_display }}</strong><span>{{ event.detail|default:'State updated' }}</span><time datetime="{{ event.happened_at|date:'c' }}">{{ event.happened_at|date:'j M Y, H:i' }}</time></li>
+          {% empty %}
+            <li><strong>Added to Booklife</strong><span>Lifecycle history starts here.</span></li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+
+    {% if available_attachments %}
+      <section class="detail-attachments" aria-labelledby="detail-attachments-heading">
+        <h2 id="detail-attachments-heading">Attachments</h2>
+        <div class="attachment-list">
+          {% for attachment in available_attachments %}
+            <a class="attachment-row attachment-download" href="{% url 'attachment-download' attachment.id %}">
+              <span class="attachment-icon">{% include "icons/icon.html" with name="paperclip" %}</span>
+              <span><strong>{{ attachment.original_name }}</strong><small>{{ attachment.size|filesizeformat }}</small></span>
+              <span class="text-button">Download</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if not book.deleted_at %}
+      <footer class="danger-zone">
+        <div><h2>Move to trash</h2><p>The book stays recoverable until it is permanently deleted.</p></div>
+        <form method="post" action="{% url 'book-trash' book.id %}" data-confirm="Move this book to trash?">{% csrf_token %}<button class="danger-button" type="submit">Move to trash</button></form>
+      </footer>
+    {% endif %}
+  </article>
+{% endblock %}

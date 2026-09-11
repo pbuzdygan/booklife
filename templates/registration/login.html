@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in · Booklife{% endblock %}
+
+{% block auth_content %}
+  <div class="login-shell">
+    <section class="login-brand" aria-label="Booklife introduction">
+      <a class="brand" href="{% url 'login' %}">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-copy"><strong>Booklife</strong><small>Private by default</small></span>
+      </a>
+      <div>
+        <p class="kicker">Every book continues</p>
+        <h1>Every book has a life beyond its pages.</h1>
+        <p>Keep the books you own, want, read, loan, and remember in one calm private space.</p>
+      </div>
+    </section>
+    <section class="login-card" aria-labelledby="login-title">
+      <p class="kicker">Welcome back</p>
+      <h2 id="login-title">Sign in to your library</h2>
+      <p class="login-help">There is no public registration. Your Booklife account is created by the administrator.</p>
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next|default:'' }}">
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <label for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="field-errors">{{ form.username.errors }}</div>{% endif %}
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="field-errors">{{ form.password.errors }}</div>{% endif %}
+        <button class="primary-button auth-submit" type="submit">Sign in</button>
+      </form>
+      <details class="first-run-help">
+        <summary>First time using Booklife?</summary>
+        <div>
+          <p>A new installation starts with username <strong>booklife</strong> and temporary password <strong>booklife</strong>.</p>
+          <p>Change that public password immediately from the folder containing <code>compose.yaml</code>:</p>
+          <code class="setup-command">docker compose run --rm web python manage.py changepassword booklife</code>
+          <p>The container logs repeat these credentials and the command. Existing databases never receive or reset this account automatically.</p>
+        </div>
+      </details>
+    </section>
+  </div>
+{% endblock %}
